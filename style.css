@@ -300,7 +300,7 @@ body {
 .battle-bg {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   background-image: url('image_c5b85f.jpg'); background-size: cover; background-position: center;
-  filter: brightness(0.5) contrast(1.5) sepia(0.5) hue-rotate(-20deg); z-index: -1;
+  filter: brightness(0.34) contrast(1.45) saturate(0.85); z-index: 0; opacity: 0.78;
 }
 
 .battle-header {
@@ -664,4 +664,109 @@ body {
 @media (max-width: 1200px) {
   .agency-status-list { gap: 4px; margin-top: 5px; }
   .agency-status-item { padding: 4px 5px; font-size: .58rem; }
+}
+
+
+/* =========================================================
+   BATTLE 3D ARENA + HUD QUALITY UPGRADE
+   - Existing HTML layout stays authoritative.
+   - Three.js is a pointer-events:none visual layer only.
+========================================================= */
+.battle-3d-stage{
+  position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 66%, rgba(71,33,126,.15), transparent 31%),
+    linear-gradient(180deg, rgba(0,0,0,.06), rgba(0,0,0,.28));
+}
+.battle-3d-stage canvas{
+  position:absolute; inset:0; width:100%!important; height:100%!important;
+  display:block; pointer-events:none;
+}
+#battle-screen::before{
+  content:""; position:absolute; inset:0; z-index:3; pointer-events:none;
+  background:
+    linear-gradient(90deg, rgba(0,238,255,.10), transparent 23%, transparent 77%, rgba(255,0,230,.10)),
+    radial-gradient(ellipse at 50% 105%, transparent 25%, rgba(0,0,0,.50) 82%);
+  mix-blend-mode:screen;
+}
+#battle-screen::after{
+  content:""; position:absolute; inset:0; z-index:3; pointer-events:none; opacity:.18;
+  background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 4px);
+}
+.battle-header,.battle-footer,.battle-judge-panel,.battle-sub-character,.battle-controls-wrapper{position:relative;}
+.battle-header{z-index:20;}
+.battle-footer{z-index:20;}
+.battle-judge-panel{position:absolute;z-index:25;}
+.battle-sub-character{position:absolute;z-index:25;}
+.battle-controls-wrapper{position:absolute;z-index:35;}
+#strategy-overlay{position:absolute;z-index:90;}
+#round-animation-overlay{position:absolute;z-index:100;}
+.battle-arena{z-index:12; perspective:1200px;}
+.fighter{
+  isolation:isolate;
+  transform-style:preserve-3d;
+}
+.fighter::before{
+  content:""; position:absolute; left:50%; bottom:8%; width:74%; height:16%;
+  transform:translateX(-50%) rotateX(72deg); border-radius:50%; z-index:-1;
+  filter:blur(12px); opacity:.58;
+}
+.fighter-left::before{background:radial-gradient(ellipse,rgba(0,238,255,.75),rgba(0,238,255,.06) 55%,transparent 72%);}
+.fighter-right::before{background:radial-gradient(ellipse,rgba(255,0,220,.75),rgba(255,0,220,.06) 55%,transparent 72%);}
+.fighter-left .main-fighter-img{
+  transform:perspective(1200px) rotateY(5deg) translateZ(16px);
+  filter:drop-shadow(-14px 12px 18px rgba(0,0,0,.7)) drop-shadow(0 0 18px rgba(0,238,255,.28));
+}
+.fighter-right .main-fighter-img{
+  transform:perspective(1200px) rotateY(-5deg) translateZ(16px);
+  filter:drop-shadow(14px 12px 18px rgba(0,0,0,.7)) drop-shadow(0 0 18px rgba(255,0,220,.28));
+}
+.main-fighter-img{animation:fighterPresence 3.4s ease-in-out infinite alternate; transform-origin:center bottom;}
+@keyframes fighterPresence{from{translate:0 0;}to{translate:0 -7px;}}
+
+/* HP numeric HUD */
+.hp-bar-container{position:relative; isolation:isolate;}
+.hp-bar{position:relative; z-index:1; box-shadow:inset 0 1px 0 rgba(255,255,255,.85), inset 0 -8px 14px rgba(255,75,0,.26);}
+.hp-value{
+  position:absolute; inset:0; z-index:4; display:flex; align-items:center; justify-content:center;
+  color:#fff; font-family:var(--font-arcade); font-size:1.02rem; font-weight:900; letter-spacing:.08em;
+  text-shadow:2px 2px 0 #000,-1px -1px 0 #000,0 0 8px rgba(0,0,0,.9);
+  transform:skewX(15deg); pointer-events:none;
+}
+.hp-bar-container::after{
+  content:"HP"; position:absolute; z-index:5; top:50%; transform:translateY(-50%) skewX(15deg);
+  font-family:var(--font-arcade); font-weight:900; font-size:.72rem; color:rgba(255,255,255,.78); text-shadow:1px 1px #000;
+}
+.left-hp .hp-bar-container::after{left:12px;}
+.right-hp .hp-bar-container::after{right:12px;}
+
+/* Attack damage resource, readable at a glance */
+.attack-btn{position:relative; padding-right:72px; min-width:142px; overflow:visible;}
+.attack-btn::after{
+  content:"DMG " attr(data-damage); position:absolute; right:8px; top:50%; transform:translateY(-50%) skewX(5deg);
+  min-width:52px; padding:3px 6px; border-radius:4px; text-align:center;
+  font-family:Arial,sans-serif; font-style:normal; font-weight:900; font-size:.72rem; letter-spacing:.02em;
+  color:#101010; background:#fff; box-shadow:0 0 10px rgba(255,255,255,.28);
+}
+.p1-controls .attack-btn::after{background:var(--p1-color);}
+.p2-controls .attack-btn::after{background:var(--p2-color); color:#fff;}
+.attack-btn.sp-btn{padding-right:82px;}
+.attack-btn.sp-btn::after{background:#ffeb3b;color:#250000;font-size:.78rem;}
+.veg-btn::after{
+  content:"  DMG " attr(data-damage); font-family:Arial,sans-serif; font-weight:900; font-size:.72rem; color:#eaffea;
+}
+
+/* Glass-metal treatment without moving the controls */
+.player-controls{
+  padding:8px; border:1px solid rgba(255,255,255,.08); border-radius:10px;
+  background:linear-gradient(145deg,rgba(4,8,14,.78),rgba(7,7,12,.48));
+  backdrop-filter:blur(8px); box-shadow:0 14px 30px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.battle-timer{filter:drop-shadow(0 0 8px rgba(255,235,0,.34));}
+.battle-agency-label{padding:8px 16px;border-left:4px solid #fff;background:linear-gradient(90deg,rgba(0,0,0,.7),transparent);}
+
+@media (max-width: 900px){
+  .attack-btn{min-width:110px;padding-right:52px;}
+  .attack-btn::after{right:5px;min-width:38px;padding:2px 4px;font-size:.58rem;content:attr(data-damage);}
+  .hp-value{font-size:.72rem;}
 }

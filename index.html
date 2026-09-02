@@ -128,11 +128,13 @@
   <!-- 戦闘画面（バトルステージ） -->
   <div id="battle-screen" class="d-none">
     <div class="battle-bg"></div>
+    <div id="battle-3d-stage" class="battle-3d-stage" aria-hidden="true"></div>
     
     <div class="battle-header">
       <div class="hp-bar-wrapper left-hp">
         <div class="hp-bar-container">
           <div class="hp-bar" id="p1-hp-bar"></div>
+          <div class="hp-value" id="p1-hp-value">100 / 100</div>
         </div>
         <div class="hp-name p1-text" id="battle-p1-name">1P</div>
       </div>
@@ -140,6 +142,7 @@
       <div class="hp-bar-wrapper right-hp">
         <div class="hp-bar-container">
           <div class="hp-bar" id="p2-hp-bar"></div>
+          <div class="hp-value" id="p2-hp-value">100 / 100</div>
         </div>
         <div class="hp-name p2-text" id="battle-p2-name">2P</div>
       </div>
@@ -166,7 +169,7 @@
     <div class="battle-sub-character">
       <img id="battle-sub-img" src="" alt="Sub">
       <div id="battle-sub-name" class="battle-sub-name p2-text">Sub</div>
-      <button id="veg-btn" class="veg-btn">野菜を投げる</button>
+      <button id="veg-btn" class="veg-btn" data-damage="3">野菜を投げる</button>
     </div>
     
     <div class="battle-controls-wrapper">
@@ -208,6 +211,7 @@
     </div>
   </div>
 
+  <script type="module" src="battle3d.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
