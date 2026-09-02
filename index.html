@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>下剋上ロープレ１０分１本勝負</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <audio id="bgm-audio" autoplay loop src="bgm.m4a"></audio>
+  <audio id="fight-se" src="nc226888_【北斗の拳】ヒャッハー！【ジャギ】.mp3"></audio>
+  <audio id="clash-se" src="clash.mp3"></audio>
+  
+  <audio id="round1-se" src="ラウンド1.mp3"></audio>
+  <audio id="fight2-se" src="ファイ.mp3"></audio>
+  <audio id="ko-se" src="KO.mp3"></audio>
+  <audio id="uwa-se" src="うわー.mp3"></audio>
+  <audio id="challenger-se" src="チャレンジャー.mp3"></audio>
+  <audio id="kamehameha-se" src="かめはめ波.mp3"></audio>
+  <audio id="strategy-se" src="作戦タイム.m4a"></audio>
+
+  <!-- 大迫力のVSカットイン用オーバーレイ -->
+  <div id="vs-splash-overlay" class="hidden">
+    <div class="splash-bg-left"></div>
+    <div class="splash-bg-right"></div>
+    
+    <!-- 🌟 追加：VS画面の審査員パネル（左上） -->
+    <div class="splash-judge" id="splash-judge">
+      <div class="splash-judge-label">審査員</div>
+      <div class="splash-judge-img-wrapper">
+        <img id="splash-judge-img" src="" alt="Judge">
+        <div id="splash-judge-name" class="splash-judge-name"></div>
+      </div>
+    </div>
+
+    <div class="splash-char splash-left" id="splash-left">
+      <img id="splash-left-img" src="" alt="1P">
+      <div id="splash-left-name" class="splash-name p1-text"></div>
+    </div>
+    <div class="splash-char splash-right" id="splash-right">
+      <img id="splash-right-img" src="" alt="2P">
+      <div id="splash-right-name" class="splash-name p2-text"></div>
+    </div>
+    <div class="splash-sub" id="splash-sub">
+      <div class="splash-sub-label">サブアタッカー</div>
+      <img id="splash-sub-img" src="" alt="Sub">
+      <div id="splash-sub-name" class="splash-sub-name p2-text"></div>
+    </div>
+    <div class="splash-flash"></div>
+    <div class="splash-vs-logo">VS</div>
+  </div>
+
+  <div class="select-screen" id="select-screen">
+    <div class="bg-layer"></div>
+
+    <header class="top-header">
+      <h1 class="title-text">CHARACTER SELECT</h1>
+    </header>
+
+    <main class="main-layout">
+      <!-- 1P: 担当者 -->
+      <div class="side-panel left-panel">
+        <h2 class="player-tag p1-tag">企業担当者</h2>
+        <div class="slot-window person-window" id="slot-manager">
+          <div class="initial-hatena"><img src="はてな.png" alt="?"></div>
+          <div class="slot-reel" id="reel-manager"></div>
+        </div>
+      </div>
+
+      <!-- 中央 -->
+      <div class="center-panel">
+        <div class="icon-grid" id="icon-grid-top"></div>
+        <div class="vs-badge">VS</div>
+        <div class="icon-grid" id="icon-grid-bottom"></div>
+        <div class="agency-wrapper">
+          <div class="slot-window agency-window" id="slot-agency">
+            <div class="slot-reel" id="reel-agency"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2P: メインアタッカー -->
+      <div class="side-panel right-panel">
+        <h2 class="player-tag p2-tag">メインアタッカー</h2>
+        <div class="slot-window person-window" id="slot-main-attacker">
+          <div class="initial-hatena"><img src="はてな.png" alt="?"></div>
+          <div class="slot-reel" id="reel-main-attacker"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 審査員パネル（左上） -->
+    <div class="judge-panel">
+      <h2 class="player-tag judge-tag">審査員</h2>
+      <div class="judge-grid" id="judge-grid">
+        <!-- JSで動的に追加されます -->
+      </div>
+    </div>
+
+    <!-- サブアタッカー（右上） -->
+    <div class="sub-attacker-panel">
+      <h2 class="player-tag sub-tag">サブアタッカー</h2>
+      <div class="slot-window sub-window" id="slot-sub-attacker">
+        <div class="initial-hatena"><img src="はてな.png" alt="?"></div>
+        <div class="slot-reel" id="reel-sub-attacker"></div>
+      </div>
+    </div>
+
+    <!-- フッター -->
+    <footer class="bottom-controls">
+      <button id="start-btn" class="action-btn fight-btn">FIGHT!!</button>
+      <button id="stop-btn" class="action-btn stop-btn" disabled>STOP!!</button>
+      <button id="reset-btn" class="action-btn secondary-btn">RESET</button>
+      
+      <button id="bgm-btn" class="icon-btn bgm-btn" title="BGM ON/OFF">🔈</button>
+      <button id="fullscreen-btn" class="icon-btn fullscreen-btn" title="フルスクリーン">⛶</button>
+    </footer>
+  </div>
+
+  <!-- 戦闘画面（バトルステージ） -->
+  <div id="battle-screen" class="d-none">
+    <div class="battle-bg"></div>
+    
+    <div class="battle-header">
+      <div class="hp-bar-wrapper left-hp">
+        <div class="hp-bar-container">
+          <div class="hp-bar" id="p1-hp-bar"></div>
+        </div>
+        <div class="hp-name p1-text" id="battle-p1-name">1P</div>
+      </div>
+      <div class="battle-timer" id="battle-timer">600</div>
+      <div class="hp-bar-wrapper right-hp">
+        <div class="hp-bar-container">
+          <div class="hp-bar" id="p2-hp-bar"></div>
+        </div>
+        <div class="hp-name p2-text" id="battle-p2-name">2P</div>
+      </div>
+    </div>
+
+    <!-- 🌟 追加：バトル画面の審査員パネル（中央タイマー下） -->
+    <div class="battle-judge-panel" id="battle-judge-panel">
+      <div class="battle-judge-label">審査員</div>
+      <div class="battle-judge-img-wrapper">
+        <img id="battle-judge-img" src="" alt="Judge">
+        <div id="battle-judge-name" class="battle-judge-name"></div>
+      </div>
+    </div>
+    
+    <div class="battle-arena">
+      <div class="fighter fighter-left" id="fighter-1p">
+        <img id="battle-p1-img" src="" alt="1P" class="main-fighter-img">
+      </div>
+      <div class="fighter fighter-right" id="fighter-2p">
+        <img id="battle-p2-img" src="" alt="2P" class="main-fighter-img">
+      </div>
+    </div>
+    
+    <div class="battle-sub-character">
+      <img id="battle-sub-img" src="" alt="Sub">
+      <div id="battle-sub-name" class="battle-sub-name p2-text">Sub</div>
+      <button id="veg-btn" class="veg-btn">野菜を投げる</button>
+    </div>
+    
+    <div class="battle-controls-wrapper">
+      <div class="player-controls p1-controls">
+        <button class="attack-btn p1-btn" data-damage="5" data-projectile="斧.png">斧</button>
+        <button class="attack-btn p1-btn" data-damage="10" data-projectile="パルス.png">パルス</button>
+        <button class="attack-btn p1-btn" data-damage="30" data-projectile="車.png">車</button>
+        <button class="attack-btn p1-btn sp-btn" data-damage="50" data-projectile="かめはめ波.png">かめはめ波</button>
+      </div>
+      <div class="player-controls p2-controls">
+        <button class="attack-btn p2-btn" data-damage="5" data-projectile="斧.png">斧</button>
+        <button class="attack-btn p2-btn" data-damage="10" data-projectile="パルス.png">パルス</button>
+        <button class="attack-btn p2-btn" data-damage="30" data-projectile="車.png">車</button>
+        <button class="attack-btn p2-btn sp-btn" data-damage="50" data-projectile="かめはめ波.png">かめはめ波</button>
+      </div>
+    </div>
+
+    <div class="battle-footer">
+      <div class="battle-agency-label" id="battle-agency-label">AGENCY</div>
+      
+      <div id="challenger-wrapper" class="challenger-wrapper d-none">
+        <button id="challenger-btn" class="action-btn challenger-btn">乱入 (NEXT FIGHT)</button>
+      </div>
+
+      <button id="back-select-btn" class="action-btn secondary-btn back-btn">◀ 選択へ戻る</button>
+    </div>
+
+    <!-- 作戦タイム用オーバーレイ -->
+    <div id="strategy-overlay" class="d-none">
+      <div class="strategy-title">作戦タイム</div>
+      <div id="strategy-timer" class="strategy-time">60</div>
+      <button id="skip-strategy-btn" class="action-btn skip-btn">SKIP (即バトル開始)</button>
+    </div>
+
+    <!-- ROUND 1 FIGHT アニメーション & KO表示枠 -->
+    <div id="round-animation-overlay">
+      <div id="round-text" class="battle-anim-text">ROUND 1</div>
+      <div id="fight-text" class="battle-anim-text text-fight">FIGHT!!</div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
