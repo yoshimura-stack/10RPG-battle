@@ -8,16 +8,16 @@ const dataPresenters = [
   '深野', '國利', '矢澤', '小林'
 ];
 const dataAgencies = [
-  'ソウルドアウト株式会社', 'GMOインターネット株式会社', '株式会社オーリーズ', 
-  '電通デジタル', 'セプテーニ', 'ADK', '株式会社キーワードマーケティング', 
-  '株式会社デジタルアイデンティティ', '株式会社グラッドキューブ', 
-  '株式会社アドウェイズ', '株式会社Speee', '株式会社デジタルガレージ'
+  '秋田ケーブルテレビ',
+  '株式会社ビューフォート',
+  '株式会社山田養蜂場',
+  'アプロス株式会社'
 ];
 
 const dataJudges = ['藪', '山内', '佐藤', '修作'];
 
 let usedPresenters = JSON.parse(localStorage.getItem('slot_used_presenters')) || [];
-let usedAgencies = JSON.parse(localStorage.getItem('slot_used_agencies')) || [];
+let usedAgencies = (JSON.parse(localStorage.getItem('slot_used_agencies')) || []).filter(a => dataAgencies.includes(a));
 let usedJudges = JSON.parse(localStorage.getItem('slot_used_judges')) || [];
 
 let audioCtx;
@@ -198,6 +198,18 @@ const vegetables = [
   'パプリカ.png', 'にんじん.png', 'ほうれんそう.png'
 ];
 
+function renderAgencyStatus() {
+  const list = document.getElementById('agency-status-list');
+  if (!list) return;
+  list.innerHTML = '';
+  dataAgencies.forEach(name => {
+    const item = document.createElement('div');
+    item.className = 'agency-status-item' + (usedAgencies.includes(name) ? ' is-used' : '');
+    item.textContent = name;
+    list.appendChild(item);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const iconGridTop = document.getElementById('icon-grid-top');
   const iconGridBottom = document.getElementById('icon-grid-bottom');
@@ -238,6 +250,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     judgeGrid.appendChild(div);
   });
+
+  renderAgencyStatus();
 
   slotManager = new Slot('reel-manager', dataManagers, 'person');
   slotMainAttacker = new Slot('reel-main-attacker', dataPresenters, 'person');
@@ -851,6 +865,7 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('slot_used_presenters', JSON.stringify(usedPresenters));
       usedAgencies.push(results[3]);
       localStorage.setItem('slot_used_agencies', JSON.stringify(usedAgencies));
+      renderAgencyStatus();
       
       usedJudges.push(judgeWinner);
       localStorage.setItem('slot_used_judges', JSON.stringify(usedJudges));
@@ -920,6 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
       usedPresenters = [];
       usedAgencies = [];
       usedJudges = [];
+      renderAgencyStatus();
       
       slotMainAttacker.baseData = dataPresenters;
       slotSubAttacker.baseData = dataPresenters;
