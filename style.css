@@ -620,3 +620,12 @@ body {
   .strategy-time { font-size: 5rem; margin-bottom: 20px; }
   .skip-btn { padding: 1rem 2rem; font-size: 1.2rem; }
 }
+
+/* MASTER VOLUME */
+.master-volume-control{position:absolute;right:118px;bottom:18px;z-index:60;height:38px;display:flex;align-items:center;gap:7px;padding:0 10px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.58);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transform:skewX(-5deg)}
+.master-volume-control>*{transform:skewX(5deg)}
+.volume-label,.volume-value{color:rgba(255,255,255,.82);font-weight:800;font-size:.68rem;user-select:none}
+.volume-value{width:34px;text-align:right}
+.master-volume-slider{width:118px;height:4px;accent-color:var(--p1-color);cursor:pointer}
+.master-volume-slider:focus-visible{outline:2px solid #fff;outline-offset:4px}
+@media (max-width:900px),(max-height:650px){.master-volume-control{right:76px;bottom:4px;height:30px;padding:0 6px;gap:4px}.master-volume-slider{width:78px}.volume-label{display:none}.volume-value{font-size:.58rem;width:28px}}

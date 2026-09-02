@@ -249,6 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const resetBtn = document.getElementById('reset-btn');
   const fullscreenBtn = document.getElementById('fullscreen-btn');
   const bgmBtn = document.getElementById('bgm-btn');
+  const masterVolumeSlider = document.getElementById('master-volume');
+  const masterVolumeValue = document.getElementById('master-volume-value');
   
   const bgmAudio = document.getElementById('bgm-audio');
   const fightSe = document.getElementById('fight-se');
@@ -262,21 +264,42 @@ document.addEventListener('DOMContentLoaded', () => {
   const kamehamehaSe = document.getElementById('kamehameha-se');
   const strategySe = document.getElementById('strategy-se');
   
-  if(round1Se) round1Se.volume = 1.0;
-  if(fight2Se) fight2Se.volume = 1.0;
-  if(koSe) koSe.volume = 1.0;
-  if(challengerSe) challengerSe.volume = 1.0;
-  if(kamehamehaSe) kamehamehaSe.volume = 1.0;
-  if(strategySe) strategySe.volume = 1.0;
-
-  let isBgmPlaying = false;
   const SELECT_BGM_VOLUME = 0.15;
   const BATTLE_BGM_VOLUME = 0.04;
   let battleBgmMode = false;
+  let masterVolume = Math.max(0, Math.min(1, Number(localStorage.getItem('rpg-master-volume') ?? '1')));
+  let volumeBeforeMute = masterVolume > 0 ? masterVolume : 0.5;
+  let isBgmPlaying = false;
+
+  const baseSeVolumes = new Map([
+    [round1Se,1],[fight2Se,1],[koSe,1],[uwaSe,1],[challengerSe,1],[kamehamehaSe,1],[strategySe,1],[fightSe,1],[clashSe,1]
+  ].filter(([audio]) => !!audio));
+
+  const applyMasterVolume = () => {
+    if (bgmAudio) bgmAudio.volume = (battleBgmMode ? BATTLE_BGM_VOLUME : SELECT_BGM_VOLUME) * masterVolume;
+    baseSeVolumes.forEach((base,audio)=>{ audio.volume = base * masterVolume; });
+    if (masterVolumeSlider) masterVolumeSlider.value = String(Math.round(masterVolume*100));
+    if (masterVolumeValue) masterVolumeValue.textContent = `${Math.round(masterVolume*100)}%`;
+    if (bgmBtn) {
+      bgmBtn.textContent = masterVolume === 0 ? '🔇' : masterVolume < .45 ? '🔉' : '🔊';
+      bgmBtn.style.color = masterVolume === 0 ? 'rgba(255,255,255,0.3)' : '#fff';
+    }
+  };
+  const setMasterVolume = (v) => {
+    masterVolume = Math.max(0, Math.min(1, v));
+    if (masterVolume > 0) volumeBeforeMute = masterVolume;
+    localStorage.setItem('rpg-master-volume', String(masterVolume));
+    applyMasterVolume();
+  };
+  if (masterVolumeSlider) masterVolumeSlider.addEventListener('input',(e)=>{
+    setMasterVolume(Number(e.target.value)/100);
+    if (!isBgmPlaying && masterVolume > 0) bgmAudio.play().then(()=>{isBgmPlaying=true;applyMasterVolume();}).catch(()=>{});
+  });
+  applyMasterVolume();
 
   const attemptPlayBgm = () => {
     if (!isBgmPlaying) {
-      bgmAudio.volume = SELECT_BGM_VOLUME; 
+      applyMasterVolume(); 
       bgmAudio.play().then(() => {
         bgmBtn.textContent = '🔊';
         bgmBtn.style.color = '#fff';
@@ -292,17 +315,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', attemptPlayBgm, { once: true });
 
   bgmBtn.addEventListener('click', (e) => {
-    e.stopPropagation(); 
-    if (isBgmPlaying) {
-      bgmAudio.pause();
-      bgmBtn.textContent = '🔈';
-      bgmBtn.style.color = 'rgba(255,255,255,0.3)';
-      isBgmPlaying = false;
-    } else {
-      bgmAudio.play().catch(e => console.error(e));
-      bgmBtn.textContent = '🔊';
-      bgmBtn.style.color = '#fff';
-      isBgmPlaying = true;
+    e.stopPropagation();
+    if (masterVolume > 0) { volumeBeforeMute = masterVolume; setMasterVolume(0); }
+    else {
+      setMasterVolume(volumeBeforeMute || 0.5);
+      if (!isBgmPlaying) bgmAudio.play().then(()=>{isBgmPlaying=true;applyMasterVolume();}).catch(e=>console.error(e));
     }
   });
 
@@ -452,7 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 projImg.remove();
                 
                 if (clashSe) {
-                  clashSe.volume = 0.8;
+                  baseSeVolumes.set(clashSe,0.8); applyMasterVolume();
                   clashSe.currentTime = 0;
                   clashSe.play().catch(e => {});
                 }
@@ -538,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
       vegImg.remove();
       
       if (clashSe) {
-        clashSe.volume = 0.4;
+        baseSeVolumes.set(clashSe,0.4); applyMasterVolume();
         clashSe.currentTime = 0;
         clashSe.play().catch(e => {});
       }
@@ -586,7 +603,8 @@ document.addEventListener('DOMContentLoaded', () => {
       fightSe.play().catch(e => console.error(e));
     }
     if (!isBgmPlaying) {
-      bgmAudio.volume = SELECT_BGM_VOLUME;
+      battleBgmMode = false;
+      applyMasterVolume();
       bgmAudio.play().catch(e => console.error(e));
       bgmBtn.textContent = '🔊';
       bgmBtn.style.color = '#fff';
@@ -705,7 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     splashOverlay.classList.add('is-active');
     
-    if (clashSe) clashSe.volume = 1.0;
+    if (clashSe) { baseSeVolumes.set(clashSe,1.0); applyMasterVolume(); }
 
     requestAnimationFrame(() => {
       splashOverlay.classList.add('is-animating');
@@ -775,19 +793,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let prevVol = bgmAudio.volume;
         bgmAudio.volume = 0.02; 
         setTimeout(() => {
-            if (isBgmPlaying) {
-                bgmAudio.volume = battleBgmMode ? BATTLE_BGM_VOLUME : prevVol;
-            }
+            if (isBgmPlaying) bgmAudio.volume = prevVol;
         }, 2500); 
       }
 
       const startRoundOne = () => {
           if (strategyTimerInterval) clearInterval(strategyTimerInterval);
           strategyOverlay.classList.add('d-none');
-
-          // ROUND 1 onward: keep BGM very low so role-play voices and SE remain clear.
           battleBgmMode = true;
-          if (bgmAudio) bgmAudio.volume = BATTLE_BGM_VOLUME;
+          applyMasterVolume();
 
           roundText.classList.add('anim-round');
           fightText.classList.add('anim-fight');
@@ -852,10 +866,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (challengerBackTimeout) clearTimeout(challengerBackTimeout);
 
     isBattleActive = false;
-    battleBgmMode = false;
-    if (bgmAudio) bgmAudio.volume = SELECT_BGM_VOLUME;
     
-    if (clashSe) clashSe.volume = 1.0;
+    if (clashSe) { baseSeVolumes.set(clashSe,1.0); applyMasterVolume(); }
 
     document.getElementById('battle-screen').classList.add('d-none');
     document.getElementById('strategy-overlay').classList.add('d-none'); 
@@ -863,6 +875,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('challenger-wrapper').classList.add('d-none');
     
     document.getElementById('select-screen').classList.remove('d-none');
+    battleBgmMode = false;
+    applyMasterVolume();
     
     const gridItems = document.getElementById('icon-grid-bottom').children;
     let delay = 500; 

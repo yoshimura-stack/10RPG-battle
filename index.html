@@ -114,7 +114,12 @@
       <button id="stop-btn" class="action-btn stop-btn" disabled>STOP!!</button>
       <button id="reset-btn" class="action-btn secondary-btn">RESET</button>
       
-      <button id="bgm-btn" class="icon-btn bgm-btn" title="BGM ON/OFF">🔈</button>
+      <div class="master-volume-control" title="マスター音量">
+        <span class="volume-label">VOL</span>
+        <input id="master-volume" class="master-volume-slider" type="range" min="0" max="100" step="1" value="100" aria-label="マスター音量">
+        <span id="master-volume-value" class="volume-value">100%</span>
+      </div>
+      <button id="bgm-btn" class="icon-btn bgm-btn" title="音声 ON/OFF">🔈</button>
       <button id="fullscreen-btn" class="icon-btn fullscreen-btn" title="フルスクリーン">⛶</button>
     </footer>
   </div>
