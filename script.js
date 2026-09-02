@@ -270,10 +270,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if(strategySe) strategySe.volume = 1.0;
 
   let isBgmPlaying = false;
+  const SELECT_BGM_VOLUME = 0.15;
+  const BATTLE_BGM_VOLUME = 0.04;
+  let battleBgmMode = false;
 
   const attemptPlayBgm = () => {
     if (!isBgmPlaying) {
-      bgmAudio.volume = 0.15; 
+      bgmAudio.volume = SELECT_BGM_VOLUME; 
       bgmAudio.play().then(() => {
         bgmBtn.textContent = '🔊';
         bgmBtn.style.color = '#fff';
@@ -583,7 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fightSe.play().catch(e => console.error(e));
     }
     if (!isBgmPlaying) {
-      bgmAudio.volume = 0.15;
+      bgmAudio.volume = SELECT_BGM_VOLUME;
       bgmAudio.play().catch(e => console.error(e));
       bgmBtn.textContent = '🔊';
       bgmBtn.style.color = '#fff';
@@ -772,13 +775,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let prevVol = bgmAudio.volume;
         bgmAudio.volume = 0.02; 
         setTimeout(() => {
-            if (isBgmPlaying) bgmAudio.volume = prevVol;
+            if (isBgmPlaying) {
+                bgmAudio.volume = battleBgmMode ? BATTLE_BGM_VOLUME : prevVol;
+            }
         }, 2500); 
       }
 
       const startRoundOne = () => {
           if (strategyTimerInterval) clearInterval(strategyTimerInterval);
           strategyOverlay.classList.add('d-none');
+
+          // ROUND 1 onward: keep BGM very low so role-play voices and SE remain clear.
+          battleBgmMode = true;
+          if (bgmAudio) bgmAudio.volume = BATTLE_BGM_VOLUME;
 
           roundText.classList.add('anim-round');
           fightText.classList.add('anim-fight');
@@ -843,6 +852,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (challengerBackTimeout) clearTimeout(challengerBackTimeout);
 
     isBattleActive = false;
+    battleBgmMode = false;
+    if (bgmAudio) bgmAudio.volume = SELECT_BGM_VOLUME;
     
     if (clashSe) clashSe.volume = 1.0;
 
