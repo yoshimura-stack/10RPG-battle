@@ -438,127 +438,58 @@ document.addEventListener('DOMContentLoaded', () => {
   function executeAttack(attackerType, damage, projectileSrc) {
     if (!isBattleActive || battleP1Hp <= 0 || battleP2Hp <= 0) return;
 
-    let delayBeforeShoot = 0; 
-
-    if (projectileSrc.includes('かめはめ波')) {
-        if (kamehamehaSe) {
-            kamehamehaSe.currentTime = 0;
-            kamehamehaSe.play().catch(e => {});
-        }
-        delayBeforeShoot = 2500; 
+    const isKame = projectileSrc.includes('かめはめ波');
+    let delayBeforeShoot = 0;
+    if (isKame) {
+      if (kamehamehaSe) {
+        kamehamehaSe.currentTime = 0;
+        kamehamehaSe.play().catch(e => {});
+      }
+      delayBeforeShoot = 1850;
     }
 
     setTimeout(() => {
-        if (!isBattleActive) return;
+      if (!isBattleActive) return;
 
+      // V3: draw the attack itself in Three.js instead of flying a flat PNG.
+      const duration = window.BattleArena3D?.attack(projectileSrc, attackerType, damage) || 0;
+
+      // Fallback only when WebGL/Three.js is unavailable.
+      if (!duration) {
         const projImg = document.createElement('img');
         projImg.src = projectileSrc;
-        projImg.style.position = 'fixed';
-        projImg.style.zIndex = '9999';
-        projImg.style.pointerEvents = 'none';
-
+        projImg.style.cssText = 'position:fixed;z-index:9999;pointer-events:none;object-fit:contain;filter:drop-shadow(0 0 18px rgba(255,255,255,.6));';
         const startRect = document.getElementById(attackerType === 1 ? 'fighter-1p' : 'fighter-2p').getBoundingClientRect();
         const targetRect = document.getElementById(attackerType === 1 ? 'fighter-2p' : 'fighter-1p').getBoundingClientRect();
+        projImg.style.width = isKame ? '58vw' : (projectileSrc.includes('車') ? '210px' : '135px');
+        projImg.style.left = (startRect.left + startRect.width/2) + 'px';
+        projImg.style.top = (startRect.top + startRect.height/2) + 'px';
+        document.body.appendChild(projImg);
+        requestAnimationFrame(()=>{projImg.style.transition='all .55s cubic-bezier(.15,.8,.2,1)';projImg.style.left=(targetRect.left+targetRect.width/2)+'px';projImg.style.top=(targetRect.top+targetRect.height/2)+'px';});
+        setTimeout(()=>projImg.remove(),650);
+      }
 
-        if (projectileSrc.includes('かめはめ波')) {
-            projImg.style.width = '100vw';
-            projImg.style.height = '100vh';
-            projImg.style.objectFit = 'contain'; 
-            projImg.style.opacity = '0.9'; 
-            projImg.style.top = '0px';
-
-            if (attackerType === 1) {
-                projImg.style.left = '-100vw'; 
-                projImg.style.transform = 'scaleX(1)';
-            } else {
-                projImg.style.left = '100vw'; 
-                projImg.style.transform = 'scaleX(-1)';
-            }
-        } else {
-            if (projectileSrc.includes('車') || projectileSrc.includes('パルス')) {
-                projImg.style.width = '200px'; 
-            } else {
-                projImg.style.width = '120px'; 
-            }
-            projImg.style.height = projImg.style.width;
-            projImg.style.objectFit = 'contain';
-
-            const startX = startRect.left + (startRect.width / 2) - (parseInt(projImg.style.width) / 2);
-            const startY = startRect.top + (startRect.height / 2) - (parseInt(projImg.style.height) / 2);
-            
-            projImg.style.left = startX + 'px';
-            projImg.style.top = startY + 'px';
-            
-            if (attackerType === 1) {
-                if (!projectileSrc.includes('斧')) projImg.style.transform = 'scaleX(1)';
-            } else {
-                if (!projectileSrc.includes('斧')) projImg.style.transform = 'scaleX(-1)'; 
-            }
+      const impactDelay = duration || 650;
+      setTimeout(() => {
+        if (!isBattleActive) return;
+        if (clashSe) {
+          baseSeVolumes.set(clashSe,0.8); applyMasterVolume();
+          clashSe.currentTime = 0;
+          clashSe.play().catch(e => {});
         }
 
-        document.body.appendChild(projImg);
-
-        let pauseTime = projectileSrc.includes('かめはめ波') ? 20 : 500;
-
-        setTimeout(() => {
-            let animDuration = projectileSrc.includes('かめはめ波') ? 0.2 : 0.4;
-            projImg.style.transition = `all ${animDuration}s cubic-bezier(0.2, 0.8, 0.2, 1)`;
-            
-            if (projectileSrc.includes('かめはめ波')) {
-                projImg.style.left = '0vw'; 
-            } else {
-                const targetX = targetRect.left + (targetRect.width / 2) - (parseInt(projImg.style.width) / 2);
-                const targetY = targetRect.top + (targetRect.height / 2) - (parseInt(projImg.style.height) / 2);
-                
-                projImg.style.left = targetX + 'px';
-                projImg.style.top = targetY + 'px'; 
-                
-                if (projectileSrc.includes('斧')) {
-                    projImg.style.transform = `rotate(${attackerType === 1 ? 1080 : -1080}deg)`;
-                }
-            }
-
-            let holdTime = projectileSrc.includes('かめはめ波') ? 2000 : 0;
-
-            setTimeout(() => {
-                projImg.remove();
-                
-                if (clashSe) {
-                  baseSeVolumes.set(clashSe,0.8); applyMasterVolume();
-                  clashSe.currentTime = 0;
-                  clashSe.play().catch(e => {});
-                }
-                
-                if (attackerType === 1) {
-                  battleP2Hp -= damage;
-                  if (battleP2Hp < 0) battleP2Hp = 0;
-                  updateBattleHpHud();
-                  window.BattleArena3D?.hit('right', damage);
-                  premiumHitFeedback('right', damage);
-                  
-                  const p2Fighter = document.getElementById('fighter-2p');
-                  p2Fighter.style.filter = 'brightness(2) sepia(1) hue-rotate(-50deg) saturate(5)';
-                  setTimeout(() => { p2Fighter.style.filter = ''; }, 150);
-                } else {
-                  battleP1Hp -= damage;
-                  if (battleP1Hp < 0) battleP1Hp = 0;
-                  updateBattleHpHud();
-                  window.BattleArena3D?.hit('left', damage);
-                  premiumHitFeedback('left', damage);
-                  
-                  const p1Fighter = document.getElementById('fighter-1p');
-                  p1Fighter.style.filter = 'brightness(2) sepia(1) hue-rotate(-50deg) saturate(5)';
-                  setTimeout(() => { p1Fighter.style.filter = ''; }, 150);
-                }
-
-                if (battleP1Hp === 0 || battleP2Hp === 0) {
-                  triggerKO();
-                }
-            }, animDuration * 1000 + holdTime); 
-
-        }, pauseTime); 
-
-    }, delayBeforeShoot); 
+        if (attackerType === 1) {
+          battleP2Hp = Math.max(0, battleP2Hp - damage);
+          updateBattleHpHud();
+          premiumHitFeedback('right', damage);
+        } else {
+          battleP1Hp = Math.max(0, battleP1Hp - damage);
+          updateBattleHpHud();
+          premiumHitFeedback('left', damage);
+        }
+        if (battleP1Hp === 0 || battleP2Hp === 0) triggerKO();
+      }, impactDelay);
+    }, delayBeforeShoot);
   }
 
   document.querySelectorAll('.p1-btn').forEach(btn => {
