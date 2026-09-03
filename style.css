@@ -770,3 +770,94 @@ body {
   .attack-btn::after{right:5px;min-width:38px;padding:2px 4px;font-size:.58rem;content:attr(data-damage);}
   .hp-value{font-size:.72rem;}
 }
+
+
+/* =========================================================
+   BATTLE V2 POLISH — cinematic depth without layout changes
+========================================================= */
+#battle-screen{
+  --arena-cyan:#00eaff;
+  --arena-magenta:#ff00dc;
+}
+.battle-bg{filter:brightness(.22) contrast(1.58) saturate(.78);opacity:.62;}
+.battle-3d-stage{filter:saturate(1.14) contrast(1.06);}
+
+/* Fighter integration: rim light + grounding + subtle depth motion. */
+.fighter::after{
+  content:"";position:absolute;left:50%;top:14%;width:72%;height:70%;transform:translateX(-50%);
+  border-radius:45%;pointer-events:none;z-index:3;opacity:.3;filter:blur(24px);mix-blend-mode:screen;
+}
+.fighter-left::after{background:radial-gradient(ellipse,rgba(0,234,255,.22),rgba(0,234,255,.04) 46%,transparent 72%);}
+.fighter-right::after{background:radial-gradient(ellipse,rgba(255,0,220,.22),rgba(255,0,220,.04) 46%,transparent 72%);}
+.fighter-left .main-fighter-img{
+  filter:drop-shadow(-16px 18px 18px rgba(0,0,0,.72)) drop-shadow(-3px 0 4px rgba(0,234,255,.72)) drop-shadow(0 0 24px rgba(0,234,255,.25));
+}
+.fighter-right .main-fighter-img{
+  filter:drop-shadow(16px 18px 18px rgba(0,0,0,.72)) drop-shadow(3px 0 4px rgba(255,0,220,.70)) drop-shadow(0 0 24px rgba(255,0,220,.24));
+}
+.main-fighter-img{animation:fighterPresenceV2 3.8s cubic-bezier(.45,0,.55,1) infinite alternate;will-change:transform,filter;}
+@keyframes fighterPresenceV2{
+  0%{translate:0 2px;scale:1;}
+  100%{translate:0 -7px;scale:1.006;}
+}
+
+/* Hit reactions — flash only on impact, not persistent tint. */
+.fighter-hit .main-fighter-img{animation:fighterHitV2 .22s ease-out both!important;}
+.fighter-hit-heavy .main-fighter-img{animation:fighterHitHeavyV2 .34s cubic-bezier(.2,.8,.2,1) both!important;}
+@keyframes fighterHitV2{
+  0%{translate:0 0;filter:brightness(2.3) saturate(1.8) drop-shadow(0 0 26px #fff);}
+  36%{translate:8px -2px;}
+  100%{translate:0 0;}
+}
+@keyframes fighterHitHeavyV2{
+  0%{translate:0 0;filter:brightness(3) contrast(1.2) saturate(2.1) drop-shadow(0 0 34px #fff);}
+  18%{translate:18px -5px;scale:1.018;}
+  48%{translate:-5px 1px;}
+  100%{translate:0 0;scale:1;}
+}
+
+/* HP delayed chip bar, like modern fighting games. */
+.hp-lag-bar{
+  position:absolute;top:0;bottom:0;left:0;width:100%;z-index:0;
+  background:linear-gradient(180deg,#fff7ba,#ffdb29 52%,#ff7a00);
+  box-shadow:0 0 13px rgba(255,221,42,.78);
+  transition:width .58s cubic-bezier(.16,.84,.22,1);
+}
+.right-hp .hp-lag-bar{left:auto;right:0;}
+.hp-bar{z-index:2;transition:width .08s linear;}
+.hp-value{z-index:5;}
+
+/* Floating damage number appears next to the affected HP bar. */
+.damage-pop{
+  position:absolute;top:48px;z-index:40;opacity:0;pointer-events:none;
+  font-family:var(--font-arcade);font-weight:1000;font-style:italic;font-size:2.1rem;line-height:1;
+  color:#fff;text-shadow:3px 3px 0 #000,0 0 14px #ffea00;
+  transform:translateY(8px) scale(.68);transition:opacity .12s ease,transform .6s cubic-bezier(.12,.8,.2,1);
+}
+.damage-pop-left{left:48%;}.damage-pop-right{right:48%;}
+.damage-pop.is-showing{opacity:1;transform:translateY(-22px) scale(1);}
+.damage-pop.is-heavy{font-size:2.55rem;color:#ffe600;text-shadow:4px 4px 0 #000,0 0 18px #ff6a00;}
+.damage-pop.is-critical{font-size:3rem;color:#fff;text-shadow:4px 4px 0 #000,0 0 16px #ff003c,0 0 34px #ff003c;}
+
+/* HUD material quality. */
+.hp-bar-container{box-shadow:0 0 18px rgba(255,170,0,.78),inset 0 0 0 1px rgba(255,255,255,.22);}
+.battle-header::after{
+  content:"";position:absolute;left:50%;top:3px;width:1px;height:72px;transform:translateX(-50%);
+  background:linear-gradient(180deg,transparent,rgba(255,234,0,.5),transparent);opacity:.65;pointer-events:none;
+}
+.player-controls{border-color:rgba(255,255,255,.13);box-shadow:0 16px 36px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.09);}
+.attack-btn{background:linear-gradient(180deg,rgba(18,20,27,.94),rgba(2,3,7,.94));box-shadow:inset 0 1px 0 rgba(255,255,255,.12);}
+.attack-btn:hover{filter:brightness(1.18);}
+.attack-btn::before{content:"";position:absolute;left:0;top:0;width:34%;height:2px;background:linear-gradient(90deg,currentColor,transparent);opacity:.62;}
+.battle-judge-img-wrapper{backdrop-filter:blur(8px);box-shadow:0 0 18px rgba(255,234,0,.18),0 10px 30px rgba(0,0,0,.42);}
+.battle-agency-label{backdrop-filter:blur(4px);}
+
+/* Tiny cinematic vignette, still leaving all controls readable. */
+#battle-screen .battle-arena::after{
+  content:"";position:absolute;inset:-5%;pointer-events:none;z-index:20;
+  background:radial-gradient(ellipse at 50% 52%,transparent 34%,rgba(0,0,0,.12) 64%,rgba(0,0,0,.38) 100%);
+}
+
+@media (max-height:900px){
+  .damage-pop{top:34px;font-size:1.55rem}.damage-pop.is-heavy{font-size:1.9rem}.damage-pop.is-critical{font-size:2.2rem}
+}

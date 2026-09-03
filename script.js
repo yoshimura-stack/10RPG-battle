@@ -184,15 +184,45 @@ let strategyTimerInterval = null;
 let battleP1Hp = 100;
 let battleP2Hp = 100;
 
-function updateBattleHpHud() {
+let p1LagTimer = null;
+let p2LagTimer = null;
+function updateBattleHpHud({instantLag = false} = {}) {
   const p1Bar = document.getElementById('p1-hp-bar');
   const p2Bar = document.getElementById('p2-hp-bar');
+  const p1Lag = document.getElementById('p1-hp-lag');
+  const p2Lag = document.getElementById('p2-hp-lag');
   const p1Value = document.getElementById('p1-hp-value');
   const p2Value = document.getElementById('p2-hp-value');
   if (p1Bar) p1Bar.style.width = battleP1Hp + '%';
   if (p2Bar) p2Bar.style.width = battleP2Hp + '%';
   if (p1Value) p1Value.textContent = `${battleP1Hp} / 100`;
   if (p2Value) p2Value.textContent = `${battleP2Hp} / 100`;
+
+  clearTimeout(p1LagTimer); clearTimeout(p2LagTimer);
+  const lagDelay = instantLag ? 0 : 360;
+  p1LagTimer = setTimeout(() => { if (p1Lag) p1Lag.style.width = battleP1Hp + '%'; }, lagDelay);
+  p2LagTimer = setTimeout(() => { if (p2Lag) p2Lag.style.width = battleP2Hp + '%'; }, lagDelay);
+}
+
+function showDamageNumber(side, damage) {
+  const wrapper = document.querySelector(side === 'left' ? '.left-hp' : '.right-hp');
+  if (!wrapper) return;
+  const pop = document.createElement('div');
+  pop.className = `damage-pop ${side === 'left' ? 'damage-pop-left' : 'damage-pop-right'} ${damage >= 50 ? 'is-critical' : damage >= 30 ? 'is-heavy' : ''}`;
+  pop.textContent = `-${damage}`;
+  wrapper.appendChild(pop);
+  requestAnimationFrame(() => pop.classList.add('is-showing'));
+  setTimeout(() => pop.remove(), 780);
+}
+
+function premiumHitFeedback(side, damage) {
+  const fighter = document.getElementById(side === 'left' ? 'fighter-1p' : 'fighter-2p');
+  if (!fighter) return;
+  fighter.classList.remove('fighter-hit', 'fighter-hit-heavy');
+  void fighter.offsetWidth;
+  fighter.classList.add(damage >= 30 ? 'fighter-hit-heavy' : 'fighter-hit');
+  showDamageNumber(side, damage);
+  setTimeout(() => fighter.classList.remove('fighter-hit', 'fighter-hit-heavy'), damage >= 30 ? 360 : 240);
 }
 let isBattleActive = false;
 
@@ -504,6 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   if (battleP2Hp < 0) battleP2Hp = 0;
                   updateBattleHpHud();
                   window.BattleArena3D?.hit('right', damage);
+                  premiumHitFeedback('right', damage);
                   
                   const p2Fighter = document.getElementById('fighter-2p');
                   p2Fighter.style.filter = 'brightness(2) sepia(1) hue-rotate(-50deg) saturate(5)';
@@ -513,6 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   if (battleP1Hp < 0) battleP1Hp = 0;
                   updateBattleHpHud();
                   window.BattleArena3D?.hit('left', damage);
+                  premiumHitFeedback('left', damage);
                   
                   const p1Fighter = document.getElementById('fighter-1p');
                   p1Fighter.style.filter = 'brightness(2) sepia(1) hue-rotate(-50deg) saturate(5)';
@@ -591,6 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (battleP1Hp < 0) battleP1Hp = 0;
       updateBattleHpHud();
       window.BattleArena3D?.hit('left', 3);
+      premiumHitFeedback('left', 3);
       
       const p1Fighter = document.getElementById('fighter-1p');
       p1Fighter.style.filter = 'brightness(2) sepia(1) hue-rotate(-50deg) saturate(5)';
