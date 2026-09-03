@@ -1,8 +1,9 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js';
-import { EffectComposer } from 'https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/postprocessing/UnrealBloomPass.js';
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
+console.info('[BattleArena3D] module loaded');
 const host = document.getElementById('battle-3d-stage');
 const screen = document.getElementById('battle-screen');
 let renderer, scene, camera, clock, composer, bloom;
@@ -115,7 +116,7 @@ function init(){
   addEventListener('resize',resize,{passive:true});renderer.setAnimationLoop(render);
 }
 function resize(){if(!renderer||!host)return;const w=host.clientWidth||innerWidth,h=host.clientHeight||innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);composer?.setSize(w,h);}
-function show(){init();visible=true;host.style.opacity='1';resize();}
+function show(){init();visible=true;if(host)host.style.opacity='1';resize();console.info('[BattleArena3D] show');}
 function hide(){visible=false;if(host)host.style.opacity='0';}
 
 function screenToWorld(rect, zPlane=2.1){

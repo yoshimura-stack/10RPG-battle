@@ -457,7 +457,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // Fallback only when WebGL/Three.js is unavailable.
       if (!duration) {
         const projImg = document.createElement('img');
-        projImg.src = projectileSrc;
+        const fallbackProjectileSrc = /\.[a-z0-9]+$/i.test(projectileSrc) ? projectileSrc : `${projectileSrc}.png`;
+        projImg.src = fallbackProjectileSrc;
         projImg.style.cssText = 'position:fixed;z-index:9999;pointer-events:none;object-fit:contain;filter:drop-shadow(0 0 18px rgba(255,255,255,.6));';
         const startRect = document.getElementById(attackerType === 1 ? 'fighter-1p' : 'fighter-2p').getBoundingClientRect();
         const targetRect = document.getElementById(attackerType === 1 ? 'fighter-2p' : 'fighter-1p').getBoundingClientRect();
