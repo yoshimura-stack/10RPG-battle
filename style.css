@@ -882,3 +882,154 @@ body {
 .hp-bar-container{backdrop-filter:blur(4px);}
 .battle-timer{transform:translateZ(0);text-shadow:4px 5px 0 rgba(0,0,0,.8),0 0 18px #ffec00!important;}
 .battle-agency-label{background:linear-gradient(90deg,rgba(0,0,0,.72),rgba(38,0,50,.38),transparent)!important;text-shadow:0 0 12px rgba(255,0,217,.72),2px 2px #000;}
+
+
+/* =========================================================
+   V3.2 CINEMATIC POLISH
+   Existing layout is preserved; only depth / integration / KO polish.
+   ========================================================= */
+
+/* Better integration of PNG fighters into the 3D stage */
+#battle-screen .fighter{
+  isolation:isolate;
+  transform-style:preserve-3d;
+}
+#battle-screen .fighter::before{
+  filter:blur(16px);
+  opacity:.58;
+  transform:scale(.88,.76) translateY(9%);
+}
+#battle-screen .fighter::after{
+  content:"";
+  position:absolute;
+  left:17%;
+  right:17%;
+  bottom:2.5%;
+  height:10%;
+  border-radius:50%;
+  z-index:-1;
+  filter:blur(14px);
+  opacity:.72;
+  transform:perspective(220px) rotateX(67deg);
+  pointer-events:none;
+}
+#battle-screen .fighter-left::after{
+  background:radial-gradient(ellipse,rgba(0,234,255,.52),rgba(0,234,255,.12) 43%,transparent 72%);
+}
+#battle-screen .fighter-right::after{
+  background:radial-gradient(ellipse,rgba(255,0,217,.48),rgba(255,0,217,.10) 43%,transparent 72%);
+}
+#battle-screen .main-fighter-img{
+  animation:fighterIdleV32 4.8s ease-in-out infinite;
+  transform-origin:50% 80%;
+  will-change:transform,filter,opacity;
+}
+@keyframes fighterIdleV32{
+  0%,100%{transform:translate3d(0,0,0) scale(1);}
+  50%{transform:translate3d(0,-4px,0) scale(1.008);}
+}
+
+/* Cinematic vignette and depth grading */
+#battle-screen::before{
+  background:
+    radial-gradient(ellipse at 50% 43%,transparent 18%,rgba(0,0,0,.06) 47%,rgba(0,0,0,.72) 100%),
+    linear-gradient(90deg,rgba(0,15,20,.18),transparent 34%,transparent 66%,rgba(18,0,20,.18))!important;
+  opacity:1!important;
+  z-index:5!important;
+  pointer-events:none;
+}
+#battle-screen .battle-3d-stage{
+  filter:saturate(1.12) contrast(1.12) brightness(.89)!important;
+}
+
+/* Winner/loser body language without changing the original positions */
+.fighter-victory .main-fighter-img{
+  animation:v32Winner 1.1s cubic-bezier(.18,.8,.18,1) forwards!important;
+  filter:drop-shadow(0 26px 22px rgba(0,0,0,.8)) drop-shadow(0 0 12px #fff) drop-shadow(0 0 42px currentColor)!important;
+}
+.fighter-defeated .main-fighter-img{
+  animation:v32Loser .72s ease-out forwards!important;
+}
+@keyframes v32Winner{
+  0%{transform:scale(1);}
+  55%{transform:translateY(-14px) scale(1.075);}
+  100%{transform:translateY(-6px) scale(1.045);}
+}
+@keyframes v32Loser{
+  to{transform:translateY(12px) scale(.94);filter:grayscale(.7) brightness(.42) blur(.2px);opacity:.55;}
+}
+
+/* KO -> Winner cinematic */
+.battle-victory-overlay{
+  position:absolute;
+  inset:0;
+  z-index:2500;
+  pointer-events:none;
+  opacity:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:0 7vw;
+  transition:opacity .18s ease;
+}
+.battle-victory-overlay::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,rgba(0,0,0,.15),rgba(0,0,0,.58) 42%,rgba(0,0,0,.58) 58%,rgba(0,0,0,.15));
+  backdrop-filter:blur(1px);
+  opacity:.58;
+}
+.battle-victory-overlay.winner-left{align-items:flex-start;}
+.battle-victory-overlay.winner-right{align-items:flex-end;text-align:right;}
+.battle-victory-overlay.is-showing{opacity:1;}
+.victory-kicker,.victory-name,.victory-label{position:relative;z-index:1;text-transform:uppercase;font-style:italic;}
+.victory-kicker{
+  font:900 clamp(22px,2.4vw,46px)/1 Impact,Arial Black,sans-serif;
+  color:#ffe600;
+  letter-spacing:.1em;
+  text-shadow:3px 3px 0 #000,0 0 18px #ff6a00;
+  transform:translateY(18px);
+  opacity:0;
+  animation:v32VictoryIn .55s .12s forwards;
+}
+.victory-name{
+  font:900 clamp(62px,8.5vw,158px)/.88 Impact,Arial Black,sans-serif;
+  color:#fff;
+  letter-spacing:.02em;
+  text-shadow:7px 8px 0 rgba(0,0,0,.9),0 0 26px #fff,0 0 55px rgba(255,0,217,.55);
+  transform:translateX(-6vw) skewX(-7deg);
+  opacity:0;
+  animation:v32VictoryName .72s .28s cubic-bezier(.12,.9,.18,1) forwards;
+}
+.winner-left .victory-name{color:#bffcff;text-shadow:7px 8px 0 rgba(0,0,0,.9),0 0 25px #00eaff,0 0 65px rgba(0,234,255,.6);}
+.winner-right .victory-name{color:#ffd0fa;text-shadow:7px 8px 0 rgba(0,0,0,.9),0 0 25px #ff00d9,0 0 65px rgba(255,0,217,.6);}
+.victory-label{
+  margin-top:10px;
+  padding:.18em .55em;
+  font:900 clamp(18px,2vw,34px)/1.1 Arial Black,sans-serif;
+  color:#090909;
+  background:#ffe600;
+  box-shadow:7px 7px 0 #000,0 0 22px rgba(255,230,0,.65);
+  transform:scaleX(0);
+  transform-origin:left center;
+  animation:v32VictoryBar .48s .72s forwards;
+}
+.winner-right .victory-label{transform-origin:right center;}
+@keyframes v32VictoryIn{to{transform:translateY(0);opacity:1;}}
+@keyframes v32VictoryName{to{transform:translateX(0) skewX(-7deg);opacity:1;}}
+@keyframes v32VictoryBar{to{transform:scaleX(1);}}
+
+/* Slightly more premium hit flash */
+#battle-screen.battle-impact{
+  animation:v32ImpactGrade .19s ease-out;
+}
+@keyframes v32ImpactGrade{
+  0%{filter:brightness(1.36) contrast(1.12);}
+  42%{filter:brightness(.88) contrast(1.26);}
+  100%{filter:none;}
+}
+
+@media (prefers-reduced-motion: reduce){
+  #battle-screen .main-fighter-img{animation:none!important;}
+}

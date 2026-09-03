@@ -387,9 +387,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+
+  function showVictoryCinematic(winnerType) {
+    const winnerName = winnerType === 1
+      ? document.getElementById('battle-p1-name')?.textContent
+      : document.getElementById('battle-p2-name')?.textContent;
+    const winnerFighter = document.getElementById(winnerType === 1 ? 'fighter-1p' : 'fighter-2p');
+    const loserFighter = document.getElementById(winnerType === 1 ? 'fighter-2p' : 'fighter-1p');
+
+    document.getElementById('battle-victory-overlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'battle-victory-overlay';
+    overlay.className = `battle-victory-overlay ${winnerType === 1 ? 'winner-left' : 'winner-right'}`;
+    overlay.innerHTML = `
+      <div class="victory-kicker">KNOCK OUT</div>
+      <div class="victory-name">${winnerName || 'WINNER'}</div>
+      <div class="victory-label">WINNER</div>
+    `;
+    document.getElementById('battle-screen')?.appendChild(overlay);
+
+    winnerFighter?.classList.add('fighter-victory');
+    loserFighter?.classList.add('fighter-defeated');
+    requestAnimationFrame(()=>overlay.classList.add('is-showing'));
+    window.BattleArena3D?.victory(winnerType);
+  }
+
+  function clearVictoryCinematic() {
+    document.getElementById('battle-victory-overlay')?.remove();
+    document.getElementById('fighter-1p')?.classList.remove('fighter-victory','fighter-defeated');
+    document.getElementById('fighter-2p')?.classList.remove('fighter-victory','fighter-defeated');
+  }
+
   function triggerKO() {
     isBattleActive = false;
     if (battleTimerInterval) clearInterval(battleTimerInterval);
+    const winnerType = battleP1Hp > 0 ? 1 : 2;
+    showVictoryCinematic(winnerType);
 
     const fightText = document.getElementById('fight-text');
     const roundText = document.getElementById('round-text');
@@ -451,7 +484,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       if (!isBattleActive) return;
 
-      // V3: draw the attack itself in Three.js instead of flying a flat PNG.
+      // V3.2: cinematic camera cue + Three.js attack.
+      window.BattleArena3D?.cameraCue(projectileSrc, attackerType);
       const duration = window.BattleArena3D?.attack(projectileSrc, attackerType, damage) || 0;
 
       // Fallback only when WebGL/Three.js is unavailable.
@@ -748,6 +782,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let timeLeft = 600;
       battleP1Hp = 100;
       battleP2Hp = 100;
+      clearVictoryCinematic();
       isBattleActive = false; 
 
       document.getElementById('battle-timer').textContent = timeLeft;
@@ -863,6 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (clashSe) { baseSeVolumes.set(clashSe,1.0); applyMasterVolume(); }
 
+    clearVictoryCinematic();
     window.BattleArena3D?.hide();
     document.getElementById('battle-screen').classList.add('d-none');
     document.getElementById('strategy-overlay').classList.add('d-none'); 

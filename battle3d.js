@@ -8,6 +8,7 @@ const host = document.getElementById('battle-3d-stage');
 const screen = document.getElementById('battle-screen');
 let renderer, scene, camera, clock, composer, bloom;
 let visible = false, shake = 0, pulse = 0, freezeUntil = 0, impactSide = 0;
+let cameraCueState = null, cameraCueUntil = 0, victoryState = null;
 const animated = [], transient = [], attackAnims = [];
 
 const CYAN = 0x00eaff, MAGENTA = 0xff00d9, GOLD = 0xffc928;
@@ -102,17 +103,110 @@ function addBackPanels(){
   }
 }
 
+
+function addPremiumArchitecture(){
+  // Deep rear wall to give the portal a real architectural anchor.
+  const rear = new THREE.Mesh(
+    new THREE.BoxGeometry(17.5, 8.5, .42),
+    metal(0x050711, 0x02030a, .25)
+  );
+  rear.position.set(0, 1.05, -17.0);
+  scene.add(rear);
+
+  // Receding luminous frames create strong perspective without changing HTML layout.
+  for(let i=0;i<7;i++){
+    const z=-5.5-i*2.15, w=14.8-i*.88, h=7.7-i*.42;
+    const col=i%2?MAGENTA:CYAN;
+    const frame=new THREE.Group();
+    const mat=neon(col,.105-i*.008);
+    const top=new THREE.Mesh(new THREE.BoxGeometry(w,.055,.055),mat); top.position.y=h*.5;
+    const left=new THREE.Mesh(new THREE.BoxGeometry(.055,h,.055),mat); left.position.x=-w*.5;
+    const right=left.clone(); right.position.x=w*.5;
+    frame.add(top,left,right); frame.position.set(0,.2,z);
+    scene.add(frame); animated.push({type:'frame',obj:frame,phase:i*.65});
+  }
+
+  // Side jumbo LED panels / architecture.
+  for(const side of [-1,1]){
+    const col=side<0?CYAN:MAGENTA;
+    for(let i=0;i<3;i++){
+      const panel=new THREE.Mesh(
+        new THREE.BoxGeometry(3.7,1.55,.16),
+        metal(0x050812,col,.28)
+      );
+      panel.position.set(side*(7.0+i*.55),1.0+i*.92,-7.5-i*3.4);
+      panel.rotation.y=side<0?.22:-.22;
+      scene.add(panel);
+      const inner=new THREE.Mesh(new THREE.PlaneGeometry(3.45,1.28),neon(col,.045+i*.012));
+      inner.position.copy(panel.position);
+      inner.position.z += .11;
+      inner.rotation.y=panel.rotation.y;
+      scene.add(inner);
+      animated.push({type:'led',obj:inner,phase:1.3+i*1.8+(side>0?1:0)});
+    }
+  }
+
+  // Floor lane lights that converge toward the rear portal.
+  for(let i=0;i<10;i++){
+    const z=3.0-i*2.65;
+    const span=6.4-i*.34;
+    const opacity=.20-i*.012;
+    for(const side of [-1,1]){
+      const line=new THREE.Mesh(
+        new THREE.PlaneGeometry(.055,2.0+i*.13),
+        neon(side<0?CYAN:MAGENTA,Math.max(.035,opacity))
+      );
+      line.rotation.x=-Math.PI/2;
+      line.rotation.z=side*(.09+i*.009);
+      line.position.set(side*span,-1.845,z);
+      scene.add(line);
+    }
+  }
+
+  // Low fog cards: darker than the former white bloom band.
+  for(let i=0;i<8;i++){
+    const fog=new THREE.Mesh(
+      new THREE.PlaneGeometry(4.2+Math.random()*3.0,.75+Math.random()*.45),
+      new THREE.MeshBasicMaterial({
+        color:i%2?0x16061d:0x03171c,
+        transparent:true,
+        opacity:.035,
+        depthWrite:false,
+        blending:THREE.AdditiveBlending
+      })
+    );
+    fog.position.set((Math.random()-.5)*13,-.45+Math.random()*1.1,-3-Math.random()*15);
+    fog.rotation.z=(Math.random()-.5)*.08;
+    scene.add(fog);
+    animated.push({type:'fog',obj:fog,phase:Math.random()*6});
+  }
+}
+
+function cameraCue(type, attackerType){
+  const key=String(type||'').toLowerCase();
+  const side=attackerType===1?-1:1;
+  const duration=key.includes('かめ')||key.includes('kame')?1750:key.includes('車')||key.includes('car')?1050:key.includes('斧')||key.includes('axe')?900:760;
+  cameraCueState={key,side,start:performance.now(),duration};
+  cameraCueUntil=performance.now()+duration;
+}
+
+function victory(winnerType){
+  victoryState={side:winnerType===1?-1:1,start:performance.now(),duration:5200};
+  pulse=Math.max(pulse,1.0);
+  shake=Math.max(shake,.18);
+}
+
 function init(){
   if(!host||renderer)return;
-  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.65));renderer.setSize(host.clientWidth||innerWidth,host.clientHeight||innerHeight,false);renderer.setClearColor(0x000000,0);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;host.appendChild(renderer.domElement);
+  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.65));renderer.setSize(host.clientWidth||innerWidth,host.clientHeight||innerHeight,false);renderer.setClearColor(0x000000,0);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.92;host.appendChild(renderer.domElement);
   scene=new THREE.Scene();scene.background=new THREE.Color(0x010207);scene.fog=new THREE.FogExp2(0x02030a,.028);clock=new THREE.Clock();camera=new THREE.PerspectiveCamera(48,(host.clientWidth||innerWidth)/(host.clientHeight||innerHeight),.1,100);camera.position.set(0,1.75,14.7);
   scene.add(new THREE.HemisphereLight(0x7ca8ff,0x08020b,.62));
   const fill=new THREE.PointLight(GOLD,22,20,1.5);fill.position.set(0,.5,-2);scene.add(fill);
-  addFloor();addCeilingAndLights();addAudienceTier(-1,-6);addAudienceTier(1,-6);addCrowd(-1);addCrowd(1);addBackPanels();addPortal();
+  addFloor();addCeilingAndLights();addAudienceTier(-1,-6);addAudienceTier(1,-6);addCrowd(-1);addCrowd(1);addBackPanels();addPortal();addPremiumArchitecture();
   // ambient particles
   const n=1100,pos=new Float32Array(n*3),cols=new Float32Array(n*3);for(let i=0;i<n;i++){const side=Math.random()<.5?-1:1;pos[i*3]=Math.random()*18-9;pos[i*3+1]=Math.random()*8-2;pos[i*3+2]=Math.random()*32-22;const c=new THREE.Color(side<0?CYAN:MAGENTA),b=.35+Math.random()*.65;cols[i*3]=c.r*b;cols[i*3+1]=c.g*b;cols[i*3+2]=c.b*b;}
   const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pos,3));pg.setAttribute('color',new THREE.BufferAttribute(cols,3));const pts=new THREE.Points(pg,new THREE.PointsMaterial({size:.035,vertexColors:true,transparent:true,opacity:.62,blending:THREE.AdditiveBlending,depthWrite:false}));scene.add(pts);animated.push({type:'particles',obj:pts});
-  composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));bloom=new UnrealBloomPass(new THREE.Vector2(host.clientWidth||innerWidth,host.clientHeight||innerHeight),1.02,.58,.48);composer.addPass(bloom);
+  composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));bloom=new UnrealBloomPass(new THREE.Vector2(host.clientWidth||innerWidth,host.clientHeight||innerHeight),.64,.50,.68);composer.addPass(bloom);
   addEventListener('resize',resize,{passive:true});renderer.setAnimationLoop(render);
 }
 function resize(){if(!renderer||!host)return;const w=host.clientWidth||innerWidth,h=host.clientHeight||innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);composer?.setSize(w,h);}
@@ -162,13 +256,54 @@ function hit(side,damage=5,pos=null,critical=false){init();const x=side==='left'
 function render(now=performance.now()){
   if(!renderer||!scene||!camera||!visible)return;const dt=Math.min(clock.getDelta(),.035),t=clock.elapsedTime;
   if(now<freezeUntil){composer.render();return;}
-  const pan=Math.sin(t*.14)*.48, dolly=Math.sin(t*.095)*.20, impactKick=impactSide*shake*.45;camera.position.x=pan+impactKick+(Math.random()-.5)*shake*.18;camera.position.y=1.72+Math.sin(t*.11)*.10+(Math.random()-.5)*shake*.10;camera.position.z=14.65+dolly;camera.lookAt(Math.sin(t*.10)*.18,-.15,-3.8);shake*=.84;impactSide*=.82;pulse*=.90;
-  for(const a of animated){if(a.type==='grid')a.obj.position.z=-7+(t*.34)%2;else if(a.type==='particles')a.obj.rotation.y=t*.002;else if(a.type==='crowd')a.obj.material.opacity=.58+(Math.sin(t*3.1+(a.side||0))+1)*.07;else if(a.type==='led')a.obj.material.opacity=.055+(Math.sin(t*2+a.phase)+1)*.038+pulse*.025;else if(a.type==='ring')a.obj.material.opacity=.19+(Math.sin(t*1.3+a.phase)+1)*.055+pulse*.08;else if(a.type==='beam')a.obj.material.opacity=.035+(Math.sin(t*.9+a.phase)+1)*.022;else if(a.type==='portal'){const s=1+Math.sin(t*1.6)*.025+pulse*.08;a.obj.scale.setScalar(s);}}
+  let targetX=Math.sin(t*.14)*.34, targetY=1.72+Math.sin(t*.11)*.08, targetZ=14.65+Math.sin(t*.095)*.14;
+  let lookX=Math.sin(t*.10)*.13, lookY=-.18, lookZ=-4.35;
+  const nowMs=performance.now();
+
+  if(cameraCueState && nowMs < cameraCueUntil){
+    const q=Math.min(1,(nowMs-cameraCueState.start)/cameraCueState.duration);
+    const wave=Math.sin(q*Math.PI);
+    const k=cameraCueState.key;
+    if(k.includes('車')||k.includes('car')){
+      targetY=.95; targetZ=13.15-wave*.95; targetX=cameraCueState.side*1.4*(1-q);
+      lookX=-cameraCueState.side*.85; lookY=-.55; lookZ=-2.6;
+    }else if(k.includes('かめ')||k.includes('kame')){
+      targetZ=13.9-wave*1.45; targetX=cameraCueState.side*.85*(1-q);
+      lookX=-cameraCueState.side*.62; lookY=.02; lookZ=-2.4;
+    }else if(k.includes('斧')||k.includes('axe')){
+      targetX=cameraCueState.side*(.9-.45*q); targetZ=14.0-wave*.6;
+      lookX=-cameraCueState.side*.75; lookY=-.05; lookZ=-2.8;
+    }else{
+      targetZ=14.15-wave*.7; targetX=cameraCueState.side*.45*(1-q);
+      lookX=-cameraCueState.side*.45; lookZ=-3.0;
+    }
+  }else if(cameraCueState){
+    cameraCueState=null;
+  }
+
+  if(victoryState){
+    const q=(nowMs-victoryState.start)/victoryState.duration;
+    if(q<1){
+      const ease=1-Math.pow(1-Math.min(1,q),3);
+      targetX=victoryState.side*(1.4+ease*1.15);
+      targetY=1.52+Math.sin(t*.8)*.05;
+      targetZ=13.6-ease*.85;
+      lookX=victoryState.side*2.25; lookY=-.05; lookZ=-1.75;
+    }else victoryState=null;
+  }
+
+  const impactKick=impactSide*shake*.45;
+  camera.position.x=targetX+impactKick+(Math.random()-.5)*shake*.16;
+  camera.position.y=targetY+(Math.random()-.5)*shake*.08;
+  camera.position.z=targetZ;
+  camera.lookAt(lookX,lookY,lookZ);
+  shake*=.84;impactSide*=.82;pulse*=.90;
+  for(const a of animated){if(a.type==='grid')a.obj.position.z=-7+(t*.34)%2;else if(a.type==='particles')a.obj.rotation.y=t*.002;else if(a.type==='crowd')a.obj.material.opacity=.58+(Math.sin(t*3.1+(a.side||0))+1)*.07;else if(a.type==='led')a.obj.material.opacity=.055+(Math.sin(t*2+a.phase)+1)*.038+pulse*.025;else if(a.type==='ring')a.obj.material.opacity=.19+(Math.sin(t*1.3+a.phase)+1)*.055+pulse*.08;else if(a.type==='beam')a.obj.material.opacity=.035+(Math.sin(t*.9+a.phase)+1)*.022;else if(a.type==='portal'){const s=1+Math.sin(t*1.6)*.025+pulse*.08;a.obj.scale.setScalar(s);}else if(a.type==='frame'){a.obj.position.y=.2+Math.sin(t*.45+a.phase)*.025;}else if(a.type==='fog'){a.obj.position.x+=Math.sin(t*.16+a.phase)*.0008;a.obj.material.opacity=.022+(Math.sin(t*.42+a.phase)+1)*.012;}}
   for(let i=attackAnims.length-1;i>=0;i--){const a=attackAnims[i];a.t+=dt;const q=Math.min(1,a.t/a.duration);a.update?.(a.obj,q,dt);if(q>=1){a.done?.();scene.remove(a.obj);a.obj.traverse?.(c=>{c.geometry?.dispose?.();if(c.material){if(Array.isArray(c.material))c.material.forEach(m=>m.dispose?.());else c.material.dispose?.();}});attackAnims.splice(i,1);}}
   for(let i=transient.length-1;i>=0;i--){const a=transient[i],o=a.obj;o.userData.life=(o.userData.life||0)+dt;const q=o.userData.max?o.userData.life/o.userData.max:0;if(a.kind==='ring'){o.scale.setScalar(1+q*2.9);o.material.opacity=Math.max(0,.8*(1-q));o.rotation.z+=dt*1.8;}else if(a.kind==='light'){o.intensity*=.78;}else if(a.kind==='sparks'){const ar=o.geometry.attributes.position.array;for(let k=0;k<o.userData.vel.length;k++){const vv=o.userData.vel[k];ar[k*3]+=vv.x*dt;ar[k*3+1]+=vv.y*dt;ar[k*3+2]+=vv.z*dt;vv.y-=2.6*dt;}o.geometry.attributes.position.needsUpdate=true;o.material.opacity=1-q;}else if(a.kind==='fade'){o.userData.max=o.userData.max||o.userData.life;o.material.opacity*=.83;}if((o.userData.max&&q>=1)||(a.kind==='fade'&&o.material.opacity<.01)){scene.remove(o);transient.splice(i,1);}}
   composer.render();
 }
 
-window.BattleArena3D={show,hide,hit,attack};
+window.BattleArena3D={show,hide,hit,attack,cameraCue,victory};
 new MutationObserver(()=>{if(!screen)return;screen.classList.contains('d-none')?hide():show();}).observe(screen,{attributes:true,attributeFilter:['class']});
 if(screen&&!screen.classList.contains('d-none'))show();
